@@ -1,0 +1,99 @@
+-- What are the TOP 5 categories based on revenue?
+WITH CTE_1
+AS
+(
+	SELECT c.name, SUM(p.amount) AS revenue
+	FROM film AS f
+	JOIN inventory AS i
+	ON f.film_id = i.film_id
+	JOIN rental AS r
+	ON i.inventory_id = r.inventory_id
+	JOIN payment AS p
+	ON p.rental_id = r.rental_id
+	JOIN film_category AS fc
+	ON f.film_id = fc.film_id
+	JOIN category AS c
+	ON fc.category_id = c.category_id
+	GROUP BY c.name
+	ORDER BY revenue DESC
+)
+SELECT *
+FROM CTE_1
+LIMIT 5;
+
+
+
+
+
+-- How many countries rent a particular amount of movies?
+SELECT
+CASE WHEN rental_count < 50 THEN '1. less than 50'
+WHEN rental_count >= 50 AND rental_count < 100 THEN '2. between 50 and 99'
+WHEN rental_count >= 100 AND rental_count < 500 THEN '3. between 100 and 499'
+WHEN rental_count >= 500 AND rental_count < 1000 THEN '4. between 500 and 999'
+WHEN rental_count >= 1000 THEN '5. more than 999' END AS count_,
+COUNT(DISTINCT country) AS country_count
+FROM
+(
+	SELECT COUNT(DISTINCT r.rental_id) AS rental_count, cr.country
+	FROM rental AS r
+	JOIN customer AS c
+	ON r.customer_id = c.customer_id
+	JOIN address AS a
+	ON c.address_id = a.address_id
+	JOIN city AS ct
+	ON a.city_id = ct.city_id
+	JOIN country AS cr
+	ON ct.country_id = cr.country_id
+	GROUP BY 2
+) AS subq
+GROUP BY 1
+ORDER BY 1;
+
+
+
+
+
+-- What are the TOP 3 R-rated movies by rental count?
+WITH
+CTE_R_movies AS
+(
+	SELECT f.film_id, f.title, f.rating, r.rental_id
+	FROM film AS f
+	JOIN inventory AS i
+	ON f.film_id = i.film_id
+	JOIN rental AS r
+	ON i.inventory_id = r.inventory_id
+	WHERE rating = 'R'
+),
+CTE_2 AS
+(
+	SELECT film_id, title, COUNT(DISTINCT rental_id) AS rental_count
+	FROM CTE_R_movies
+	GROUP BY 1, 2
+	ORDER BY 3 DESC
+)
+SELECT * FROM
+	(
+		SELECT *, DENSE_RANK() OVER (ORDER BY rental_count DESC) AS rank_
+		FROM CTE_2
+	) AS subq
+	WHERE rank_ <= 3;
+
+
+
+
+
+
+-- Which store is more profitable?
+SELECT SUM(p.amount) revenue, DATE_TRUNC('month', payment_date) AS month_, st.store_id, st.manager_staff_id, CONCAT(s.first_name, ' ', s.last_name)
+FROM staff s
+JOIN rental r
+ON s.staff_id = r.staff_id
+JOIN payment p
+ON p.staff_id = s.staff_id
+JOIN store st
+ON s.store_id = st.store_id
+GROUP BY 2, 3, 4, 5
+ORDER BY month_
+;
