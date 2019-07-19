@@ -1,1 +1,1 @@
-SQL project exploring movie base.
+SQL project exploring movies base.
