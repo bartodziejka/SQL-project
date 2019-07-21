@@ -1,4 +1,4 @@
--- What are the TOP 5 categories based on revenue?
+-- What are the TOP 6 categories based on revenue?
 WITH CTE_1
 AS
 (
@@ -19,7 +19,7 @@ AS
 )
 SELECT *
 FROM CTE_1
-LIMIT 5;
+LIMIT 6;
 
 
 
